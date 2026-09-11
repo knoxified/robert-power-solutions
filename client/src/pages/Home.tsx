@@ -58,7 +58,7 @@ const services = [
 
 const faqs = [
   ["Do you only repair systems you installed?", "No. Robert Power Solutions can inspect and repair systems installed by other technicians, provided the equipment is accessible and safe to work on."],
-  ["Do you cover areas outside Lagos?", "Yes. Lagos is the home base, with service available across Nigeria by arrangement. Share your location and a short video of the fault for a quick first assessment."],
+  ["Do you cover areas outside Nigeria?", "Yes. Nigeria is the service base, with service available across Nigeria by arrangement. Share your location and a short video of the fault for a quick first assessment."],
   ["How do I get a quote?", "Send a WhatsApp message with your location, inverter brand, the fault you are seeing, and a photo or short video. We will advise on the next best step before any work begins."],
 ];
 
@@ -81,7 +81,7 @@ export default function Home() {
 
   return (
     <main id="top">
-      <div className="notice-bar"><span className="pulse-dot" /> Solar system acting up? <strong>Same-day diagnosis in Lagos</strong><a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">Message now <ArrowUpRight size={13} /></a></div>
+      <div className="notice-bar"><span className="pulse-dot" /> Solar system acting up? <strong>Same-day diagnosis in Nigeria</strong><a href={WHATSAPP_HREF} target="_blank" rel="noreferrer">Message now <ArrowUpRight size={13} /></a></div>
 
       <header className="site-header">
         <div className="container header-inner">
@@ -101,7 +101,7 @@ export default function Home() {
         <div className="hero-grid" />
         <div className="container hero-inner">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-line" /> SOLAR REPAIR SPECIALIST · LAGOS + NIGERIA</div>
+            <div className="eyebrow"><span className="eyebrow-line" /> SOLAR REPAIR SPECIALIST · NIGERIA-WIDE</div>
             <h1>Your solar system should be powering your life—<em>not interrupting it.</em></h1>
             <p className="hero-lede">When your inverter starts beeping, your battery quits early, or the panels stop pulling their weight, Robert Power Solutions finds the fault and gets your power back on track.</p>
             <div className="hero-actions"><WhatsAppButton /><a className="text-link" href={PHONE_HREF}><span className="phone-icon"><PhoneCall size={15} /></span> Call {PHONE}</a></div>
@@ -124,7 +124,7 @@ export default function Home() {
         <div className="hero-bottom container"><span>For homes</span><i /><span>Offices</span><i /><span>Shops</span><i /><span>Facilities</span><span className="hero-bottom-note">Built for Nigeria's power reality <ArrowUpRight size={15} /></span></div>
       </section>
 
-      <section className="trust-strip"><div className="container trust-inner"><span className="trust-kicker">The first call when your solar stops making sense</span><div className="trust-items"><span><Check size={15} /> Clear fault-finding</span><span><Check size={15} /> Lagos-based</span><span><Check size={15} /> Nationwide by arrangement</span></div></div></section>
+      <section className="trust-strip"><div className="container trust-inner"><span className="trust-kicker">The first call when your solar stops making sense</span><div className="trust-items"><span><Check size={15} /> Clear fault-finding</span><span><Check size={15} /> Nigeria-wide</span><span><Check size={15} /> Nationwide by arrangement</span></div></div></section>
 
       <section className="section symptoms-section" id="repairs">
         <div className="container">
@@ -142,11 +142,11 @@ export default function Home() {
 
       <section className="section services-section"><div className="container services-grid"><div><div className="eyebrow eyebrow--dark"><span className="eyebrow-line" /> WHAT WE HELP WITH</div><h2>Keep the system you have.<br /><em>Make it work better.</em></h2><p className="section-copy">From an isolated inverter fault to a full-system health check, we make solar less stressful to own.</p></div><div className="services-list">{services.map((service, i) => <div className="service-row" key={service}><span>0{i + 1}</span><strong>{service}</strong><ArrowUpRight size={18} /></div>)}<div className="service-note"><Sparkles size={17} /> Selling & installation are available too—<strong>but repairs are our first promise.</strong></div></div></div></section>
 
-      <section className="section about-section" id="about"><div className="container about-grid"><div className="about-statement"><div className="quote-mark">“</div><blockquote>A solar system is an investment in peace of mind. My job is to help you keep that peace.</blockquote><div className="signature"><span className="signature-line" /><div><strong>Robert Emeka</strong><small>Founder, Robert Power Solutions</small></div></div></div><div className="about-details"><div className="eyebrow"><span className="eyebrow-line" /> THE PERSON BEHIND THE POWER</div><h2>Local hands.<br /><em>Proper thinking.</em></h2><p>Robert Power Solutions is Lagos-based and built around a simple standard: understand the system, tell the truth about the fault, and leave the customer with power they can rely on.</p><div className="location-row"><div className="location-pin"><Sun size={20} /></div><div><strong>Lagos, Nigeria</strong><span>Serving homes, businesses & facilities nationwide</span></div></div><div className="social-row"><a href="https://www.facebook.com/" target="_blank" rel="noreferrer">Facebook <ArrowUpRight size={14} /></a><a href="https://x.com/RobertSolarspro" target="_blank" rel="noreferrer">X / @RobertSolarspro <ArrowUpRight size={14} /></a></div></div></div></section>
+      <section className="section about-section" id="about"><div className="container about-grid"><div className="about-statement"><div className="quote-mark">“</div><blockquote>A solar system is an investment in peace of mind. My job is to help you keep that peace.</blockquote><div className="signature"><span className="signature-line" /><div><strong>Robert Emeka</strong><small>Founder, Robert Power Solutions</small></div></div></div><div className="about-details"><div className="eyebrow"><span className="eyebrow-line" /> THE PERSON BEHIND THE POWER</div><h2>Local hands.<br /><em>Proper thinking.</em></h2><p>Robert Power Solutions is Nigeria-wide and built around a simple standard: understand the system, tell the truth about the fault, and leave the customer with power they can rely on.</p><div className="location-row"><div className="location-pin"><Sun size={20} /></div><div><strong>Nigeria</strong><span>Serving homes, businesses & facilities nationwide</span></div></div><div className="social-row"><a href="https://www.facebook.com/" target="_blank" rel="noreferrer">Facebook <ArrowUpRight size={14} /></a><a href="https://x.com/RobertSolarspro" target="_blank" rel="noreferrer">X / @RobertSolarspro <ArrowUpRight size={14} /></a></div></div></div></section>
 
       <section className="section faq-section" id="faq"><div className="container faq-grid"><div><div className="eyebrow eyebrow--dark"><span className="eyebrow-line" /> BEFORE YOU MESSAGE</div><h2>Good questions.<br /><em>Better decisions.</em></h2><p>Not sure if your issue is serious? Start here, then send a photo or video and we’ll help you work out what to do next.</p><WhatsAppButton /></div><div className="faq-list">{faqs.map(([question, answer], index) => <div className={`faq-item ${openFaq === index ? "faq-item--open" : ""}`} key={question}><button onClick={() => setOpenFaq(openFaq === index ? null : index)}><span>{question}</span><ChevronDown size={18} /></button>{openFaq === index && <p>{answer}</p>}</div>)}</div></div></section>
 
-      <section className="final-cta"><div className="final-glow" /><div className="container final-inner"><div className="eyebrow"><span className="eyebrow-line" /> YOUR NEXT STEP</div><h2>Let’s get your power<br /><em>working properly again.</em></h2><p>Send a message with your location and a quick description of the fault. Robert will take it from there.</p><div className="hero-actions"><WhatsAppButton /><a className="text-link text-link--light" href={PHONE_HREF}><span className="phone-icon"><PhoneCall size={15} /></span> {PHONE}</a></div><div className="final-meta"><span><Clock3 size={15} /> Lagos-based</span><span><ShieldCheck size={15} /> Honest diagnosis</span><span><Zap size={15} /> Power restored</span></div></div></section>
+      <section className="final-cta"><div className="final-glow" /><div className="container final-inner"><div className="eyebrow"><span className="eyebrow-line" /> YOUR NEXT STEP</div><h2>Let’s get your power<br /><em>working properly again.</em></h2><p>Send a message with your location and a quick description of the fault. Robert will take it from there.</p><div className="hero-actions"><WhatsAppButton /><a className="text-link text-link--light" href={PHONE_HREF}><span className="phone-icon"><PhoneCall size={15} /></span> {PHONE}</a></div><div className="final-meta"><span><Clock3 size={15} /> Nigeria-wide</span><span><ShieldCheck size={15} /> Honest diagnosis</span><span><Zap size={15} /> Power restored</span></div></div></section>
 
       <footer className="site-footer"><div className="container footer-inner"><Logo compact /><span className="footer-note">Solar repairs, servicing & smarter power systems.</span><span className="footer-copy">© {new Date().getFullYear()} Robert Power Solutions</span></div></footer>
       <a className="floating-whatsapp" href={WHATSAPP_HREF} target="_blank" rel="noreferrer" aria-label="Chat on WhatsApp"><MessageCircle size={23} /><span>Chat with Robert</span></a>
