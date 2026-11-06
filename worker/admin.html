@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Robert's Studio</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#FBF8F3;color:#17130F;-webkit-text-size-adjust:100%}
+button,input,textarea,select{font:inherit}a{color:#B45309}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;padding:12px 16px;background:#14110E;color:#fff}
+header img{width:38px;height:38px;border-radius:10px;background:#fff;object-fit:contain}header b{flex:1;font-size:16px}
+.link{background:none;border:0;color:#FFB547;font-weight:600;cursor:pointer;padding:8px}
+nav{display:flex;gap:6px;padding:12px 16px 0;max-width:980px;margin:0 auto}
+nav button{flex:1;padding:13px 10px;border:1px solid #E8DFD3;border-radius:12px;background:#fff;font-weight:700;cursor:pointer;color:#6f6558}
+nav button.on{background:#14110E;color:#fff;border-color:#14110E}
+main{max-width:980px;margin:0 auto;padding:16px 16px 90px}
+.card{background:#fff;border:1px solid #E8DFD3;border-radius:16px;padding:16px;margin-bottom:12px}
+h2{margin:6px 0 14px;font-size:22px;letter-spacing:-.02em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 18px;border:0;border-radius:12px;background:#E5171F;color:#fff;font-weight:700;cursor:pointer}
+.btn.alt{background:#fff;color:#17130F;border:1px solid #D9CDBE}.btn.dark{background:#14110E}.btn.sm{padding:8px 12px;font-size:13px;border-radius:10px}.btn.del{background:#fff;color:#C20F16;border:1px solid #F3B8B5}
+.btn:disabled{opacity:.55}
+label{display:block;margin:14px 0 6px;font-size:13px;font-weight:700;color:#6f6558}
+input[type=text],textarea,select{width:100%;padding:13px 14px;border:1px solid #D9CDBE;border-radius:12px;background:#fff;font-size:16px;outline:none}input:focus,textarea:focus,select:focus{border-color:#B45309}
+textarea{min-height:320px;resize:vertical;line-height:1.55}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1}
+.chip{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}.chip.pub{background:#DDF3E3;color:#14663A}.chip.dr{background:#FDE9C9;color:#8A3F06}
+.post{display:flex;gap:12px;align-items:center;cursor:pointer}.post img,.thumb{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#F4ECE0;flex:none}
+.post h3{margin:0 0 4px;font-size:16px}.post small{color:#8a7e70}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.m{position:relative;border:1px solid #E8DFD3;border-radius:14px;overflow:hidden;background:#fff}
+.m .pic{aspect-ratio:1;background:#F4ECE0;display:block;width:100%;object-fit:cover}.m .tag{position:absolute;top:8px;left:8px;padding:2px 8px;border-radius:99px;background:#14110Ecc;color:#fff;font-size:11px}
+.m .bd{padding:8px}.m .cap{font-size:12px;color:#6f6558;min-height:30px;word-break:break-word}.m .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.drop{border:2px dashed #D9CDBE;border-radius:16px;padding:26px 16px;text-align:center;background:#fff}
+.drop p{margin:0 0 12px;color:#6f6558}
+.bar{height:6px;background:#F4ECE0;border-radius:9px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;width:0;background:#E5171F;transition:width .2s}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.pv{padding:14px;border:1px solid #E8DFD3;border-radius:12px;background:#fff;line-height:1.7}.pv img,.pv video{max-width:100%;border-radius:12px}
+.modal{position:fixed;inset:0;z-index:20;background:#000a;display:flex;align-items:flex-end;justify-content:center}
+.modal>div{width:100%;max-width:760px;max-height:88vh;overflow:auto;background:#FBF8F3;border-radius:20px 20px 0 0;padding:16px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:30;padding:12px 18px;border-radius:12px;background:#14110E;color:#fff;font-size:14px;box-shadow:0 10px 30px #0006}
+.toast.bad{background:#C20F16}.hint{font-size:13px;color:#8a7e70;margin:6px 0 0}
+</style></head><body>
+<header><img src="/images/mark.webp" alt=""><b>Robert's Studio</b><button class="link" id="out">Log out</button></header>
+<nav><button data-tab="posts" class="on">Blog posts</button><button data-tab="media">Photos &amp; videos</button></nav>
+<main id="app"></main>
+<script>
+var A="__ADMIN__",S={tab:"posts",posts:[],media:[],edit:null,preview:false,busy:false};
+function $(s,r){return (r||document).querySelector(s)}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function toast(m,bad){var t=document.createElement("div");t.className="toast"+(bad?" bad":"");t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},bad?4500:2200)}
+function api(method,path,body){var o={method:method,headers:{"x-rps":"1"}};if(body!==undefined){o.headers["content-type"]="application/json";o.body=JSON.stringify(body)}
+ return fetch(A+"/api"+path,o).then(function(r){if(r.status===401){location.reload();throw new Error("Please log in again")}return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Something went wrong");return d})})}
+function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,80)}
+function fmt(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+
+/* tiny markdown preview (escape first, then format) */
+function md(src){var u=function(x){return /^(https?:\/\/|\/media\/|mailto:|tel:)/i.test(x)?x:"#"};
+ function inl(t){t=esc(t);
+  t=t.replace(/!\[video\]\(([^)\s]+)\)/g,function(_,a){return '<video controls preload="metadata" src="'+u(a)+'"></video>'});
+  t=t.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g,function(_,a,b){return '<img alt="'+a+'" src="'+u(b)+'">'});
+  t=t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,function(_,a,b){return '<a href="'+u(b)+'">'+a+'</a>'});
+  return t.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>")}
+ var out=[],L=String(src).replace(/\r/g,"").split("\n"),i=0;
+ while(i<L.length){var l=L[i];
+  if(!l.trim()){i++;continue}
+  var h=l.match(/^(#{1,3})\s+(.*)$/);if(h){out.push("<h"+(h[1].length+1)+">"+inl(h[2])+"</h"+(h[1].length+1)+">");i++;continue}
+  if(/^---+$/.test(l.trim())){out.push("<hr>");i++;continue}
+  if(/^>\s?/.test(l)){var q=[];while(i<L.length&&/^>\s?/.test(L[i])){q.push(L[i].replace(/^>\s?/,""));i++}out.push("<blockquote>"+inl(q.join(" "))+"</blockquote>");continue}
+  if(/^\s*[-*]\s+/.test(l)){var li=[];while(i<L.length&&/^\s*[-*]\s+/.test(L[i])){li.push("<li>"+inl(L[i].replace(/^\s*[-*]\s+/,""))+"</li>");i++}out.push("<ul>"+li.join("")+"</ul>");continue}
+  if(/^\s*\d+\.\s+/.test(l)){var ol=[];while(i<L.length&&/^\s*\d+\.\s+/.test(L[i])){ol.push("<li>"+inl(L[i].replace(/^\s*\d+\.\s+/,""))+"</li>");i++}out.push("<ol>"+ol.join("")+"</ol>");continue}
+  var p=[];while(i<L.length&&L[i].trim()&&!/^(#{1,3}\s|>|---+$|\s*[-*]\s|\s*\d+\.\s)/.test(L[i])){p.push(L[i]);i++}
+  var j=p.join("<br>");out.push(/^!\[/.test(p[0])&&p.length===1?inl(p[0]):"<p>"+inl(p.join("\n")).replace(/\n/g,"<br>")+"</p>")}
+ return out.join("")}
+
+/* image compression before upload (phones take huge photos) */
+function prep(f){if(!/^image\/(jpeg|png|webp)$/.test(f.type)||f.size<400*1024||!window.createImageBitmap)return Promise.resolve(f);
+ return createImageBitmap(f,{imageOrientation:"from-image"}).then(function(b){var s=Math.min(1,1800/Math.max(b.width,b.height)),c=document.createElement("canvas");c.width=Math.round(b.width*s);c.height=Math.round(b.height*s);c.getContext("2d").drawImage(b,0,0,c.width,c.height);
+  return new Promise(function(res){c.toBlob(function(bl){res(bl&&bl.size<f.size?new File([bl],f.name.replace(/\.\w+$/,"")+".jpg",{type:"image/jpeg"}):f)},"image/jpeg",.85)})}).catch(function(){return f})}
+function send(f,gallery,caption,prog){return prep(f).then(function(g){return new Promise(function(res,rej){var x=new XMLHttpRequest();
+ x.open("PUT",A+"/api/upload?name="+encodeURIComponent(g.name)+"&gallery="+(gallery?1:0)+"&caption="+encodeURIComponent(caption||""));
+ x.setRequestHeader("x-rps","1");x.setRequestHeader("content-type",g.type||"application/octet-stream");
+ x.upload.onprogress=function(e){if(e.lengthComputable)prog(e.loaded/e.total)};
+ x.onload=function(){var d={};try{d=JSON.parse(x.responseText)}catch(e){}if(x.status===401)location.reload();else if(x.status===200)res(d.item);else rej(new Error(d.error||"Upload failed ("+x.status+")"))};
+ x.onerror=function(){rej(new Error("Network problem. Check your connection and try again."))};x.send(g)})})}
+
+function load(){return Promise.all([api("GET","/posts"),api("GET","/media")]).then(function(r){S.posts=r[0];S.media=r[1];render()}).catch(function(e){toast(e.message,1)})}
+
+function render(){document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("on",b.dataset.tab===S.tab&&!S.edit)});
+ $("#app").innerHTML=S.edit?editor():S.tab==="posts"?postList():mediaView()}
+function postList(){var h='<div class="row"><h2 class="grow">Blog posts</h2><button class="btn" data-act="new">+ New post</button></div>';
+ if(!S.posts.length)h+='<div class="card"><p>No posts yet. Tap <b>New post</b> to write the first one.</p></div>';
+ S.posts.forEach(function(p){h+='<div class="card post" data-act="open" data-slug="'+esc(p.slug)+'">'+(p.cover?'<img src="'+esc(p.cover)+'" alt="">':'<div class="thumb"></div>')+'<div class="grow"><h3>'+esc(p.title)+'</h3><span class="chip '+(p.status==="published"?"pub":"dr")+'">'+(p.status==="published"?"Published":"Draft")+'</span> <small>'+new Date(p.updatedAt).toLocaleDateString()+'</small></div></div>'});
+ return h}
+function mediaView(){var h='<h2>Photos &amp; videos</h2><div class="drop"><p>Add photos or videos from your phone or computer.</p><input type="file" id="files" accept="image/*,video/mp4,video/quicktime,video/webm" multiple hidden><button class="btn dark" data-act="pick">Choose files</button>'+
+ '<label style="margin-top:16px"><input type="checkbox" id="ingal" checked> Show in the public Gallery</label><input type="text" id="incap" placeholder="Caption (optional)" style="margin-top:6px"><p class="hint">Photos are shrunk automatically. Videos can be up to 95 MB each.</p><div id="up"></div></div><h2 style="margin-top:22px">Library ('+S.media.length+')</h2><div class="grid">';
+ S.media.forEach(function(m){h+='<div class="m"><span class="tag">'+(m.type==="video"?"Video":"Photo")+'</span>'+(m.type==="video"?'<video class="pic" preload="metadata" muted playsinline src="/media/'+esc(m.key)+'#t=0.1"></video>':'<img class="pic" loading="lazy" alt="" src="/media/'+esc(m.key)+'">')+
+  '<div class="bd"><div class="cap">'+(esc(m.caption)||"<i>No caption</i>")+'</div><div class="hint">'+fmt(m.size)+' · '+(m.gallery?"In gallery":"Hidden")+'</div><div class="acts"><button class="btn alt sm" data-act="cap" data-k="'+esc(m.key)+'">Caption</button><button class="btn alt sm" data-act="gal" data-k="'+esc(m.key)+'">'+(m.gallery?"Hide":"Show")+'</button><button class="btn del sm" data-act="rm" data-k="'+esc(m.key)+'">Delete</button></div></div></div>'});
+ return h+"</div>"}
+function editor(){var p=S.edit;
+ return '<div class="row"><button class="btn alt sm" data-act="back">← Back</button><h2 class="grow" style="margin:0">'+(p.isNew?"New post":"Edit post")+'</h2></div>'+
+ '<div class="card"><label>Title</label><input type="text" id="t" value="'+esc(p.title)+'" placeholder="e.g. How we installed a 10kVA Deye system in Lekki">'+
+ '<label>Web address</label><input type="text" id="s" value="'+esc(p.slug)+'" '+(p.isNew?"":"disabled")+'><div class="hint">'+location.host+'/blog/<b id="sp">'+esc(p.slug)+'</b></div>'+
+ '<label>Short summary (shown on the blog page and Google)</label><textarea id="x" style="min-height:80px" maxlength="400">'+esc(p.excerpt)+'</textarea>'+
+ '<label>Cover photo</label><div class="row">'+(p.cover?'<img class="thumb" src="'+esc(p.cover)+'" alt="">':"")+'<button class="btn alt sm" data-act="cover">'+(p.cover?"Change":"Choose cover")+'</button>'+(p.cover?'<button class="btn del sm" data-act="nocover">Remove</button>':"")+'</div></div>'+
+ '<div class="card"><label style="margin-top:0">Write your post</label><div class="tools"><button class="btn alt sm" data-f="h">Heading</button><button class="btn alt sm" data-f="b">Bold</button><button class="btn alt sm" data-f="i">Italic</button><button class="btn alt sm" data-f="l">List</button><button class="btn alt sm" data-f="a">Link</button><button class="btn alt sm" data-act="ins">+ Photo / video</button><button class="btn alt sm" data-act="pv">'+(S.preview?"Edit":"Preview")+'</button></div>'+
+ (S.preview?'<div class="pv">'+(md($("#b")?$("#b").value:p.body)||"<i>Nothing to preview yet</i>")+'</div><textarea id="b" hidden>'+esc(p.body)+'</textarea>':'<textarea id="b" placeholder="Write here. Use the buttons above for headings, bold, photos and videos.">'+esc(p.body)+'</textarea>')+'</div>'+
+ '<div class="card"><label style="margin-top:0">Status</label><select id="st"><option value="draft"'+(p.status==="draft"?" selected":"")+'>Draft (only you can see it)</option><option value="published"'+(p.status==="published"?" selected":"")+'>Published (visible on the website)</option></select>'+
+ '<div class="row" style="margin-top:16px"><button class="btn grow" data-act="save">Save</button>'+(p.isNew||p.status!=="published"?"":'<a class="btn alt" target="_blank" href="/blog/'+esc(p.slug)+'">View live</a>')+(p.isNew?"":'<button class="btn del" data-act="delpost">Delete</button>')+'</div></div>'}
+function grab(){if(!S.edit)return;var p=S.edit,g=function(id){var e=$("#"+id);return e?e.value:null};
+ if(g("t")!==null)p.title=g("t");if(g("s")!==null&&p.isNew)p.slug=g("s");if(g("x")!==null)p.excerpt=g("x");if(g("b")!==null)p.body=g("b");if(g("st")!==null)p.status=g("st")}
+function picker(kinds,cb){var m=document.createElement("div");m.className="modal";var h='<div><div class="row"><h2 class="grow">Choose from your library</h2><button class="btn alt sm" data-x>Close</button></div><div class="grid">';
+ var list=S.media.filter(function(i){return kinds.indexOf(i.type)>-1});if(!list.length)h+='<p>Nothing here yet. Upload in the <b>Photos &amp; videos</b> tab first.</p>';
+ list.forEach(function(i){h+='<div class="m" data-k="'+esc(i.key)+'" style="cursor:pointer">'+(i.type==="video"?'<video class="pic" muted playsinline preload="metadata" src="/media/'+esc(i.key)+'#t=0.1"></video>':'<img class="pic" alt="" src="/media/'+esc(i.key)+'">')+'<div class="bd"><div class="cap">'+esc(i.caption||i.name)+'</div></div></div>'});
+ m.innerHTML=h+"</div></div>";document.body.appendChild(m);
+ m.addEventListener("click",function(e){if(e.target===m||e.target.hasAttribute("data-x")){m.remove();return}var c=e.target.closest(".m");if(c){var it=S.media.filter(function(i){return i.key===c.dataset.k})[0];m.remove();cb(it)}})}
+function wrap(a,b){var t=$("#b");if(!t)return;var s=t.selectionStart,e=t.selectionEnd,v=t.value,sel=v.slice(s,e)||"text";t.value=v.slice(0,s)+a+sel+b+v.slice(e);t.focus();t.selectionStart=s+a.length;t.selectionEnd=s+a.length+sel.length}
+function insertAt(txt){var t=$("#b");var s=t.selectionStart;t.value=t.value.slice(0,s)+txt+t.value.slice(s);t.focus()}
+function save(){grab();var p=S.edit;if(!p.title.trim())return toast("Please add a title first.",1);p.slug=p.isNew?(slugify(p.slug)||slugify(p.title)):p.slug;if(!p.slug)return toast("Please add a title first.",1);
+ api("PUT","/posts/"+p.slug+(p.isNew?"?new=1":""),{title:p.title,excerpt:p.excerpt,cover:p.cover,body:p.body,status:p.status}).then(function(r){S.edit=Object.assign({},r.post);toast(r.post.status==="published"?"Saved and live on the website":"Draft saved");return load()}).catch(function(e){toast(e.message,1)})}
+
+document.addEventListener("click",function(e){var n=e.target.closest("nav button");if(n){grab();S.edit=null;S.tab=n.dataset.tab;render();return}
+ if(e.target.id==="out"){api("POST","/logout",{}).then(function(){location.reload()});return}
+ var f=e.target.closest("[data-f]");if(f){var k=f.dataset.f;if(k==="h")wrap("\n## ","\n");if(k==="b")wrap("**","**");if(k==="i")wrap("*","*");if(k==="l")wrap("\n- ","\n");if(k==="a"){var u=prompt("Paste the link (starting with https://)");if(u)wrap("[","]("+u+")")}return}
+ var a=e.target.closest("[data-act]");if(!a)return;var act=a.dataset.act,key=a.dataset.k;
+ if(act==="new"){S.edit={isNew:true,slug:"",title:"",excerpt:"",cover:"",body:"",status:"draft"};S.preview=false;render();var t=$("#t");if(t)t.addEventListener("input",function(){var s=$("#s");if(s&&!s.dataset.touched){s.value=slugify(t.value);$("#sp").textContent=s.value}});var s=$("#s");if(s)s.addEventListener("input",function(){s.dataset.touched=1;$("#sp").textContent=slugify(s.value)})}
+ else if(act==="open"){api("GET","/posts/"+a.dataset.slug).then(function(p){S.edit=p;S.preview=false;render()}).catch(function(x){toast(x.message,1)})}
+ else if(act==="back"){grab();S.edit=null;render()}
+ else if(act==="pv"){grab();S.preview=!S.preview;render()}
+ else if(act==="cover"){grab();picker(["image"],function(it){S.edit.cover="/media/"+it.key;render()})}
+ else if(act==="nocover"){grab();S.edit.cover="";render()}
+ else if(act==="ins"){grab();picker(["image","video"],function(it){var url="/media/"+it.key,alt=(it.caption||"").replace(/[\[\]]/g,"");S.preview=false;render();insertAt("\n\n"+(it.type==="video"?"![video]("+url+")":"!["+alt+"]("+url+")")+"\n\n")})}
+ else if(act==="save"){save()}
+ else if(act==="delpost"){if(confirm("Delete this post for good?"))api("DELETE","/posts/"+S.edit.slug).then(function(){S.edit=null;toast("Post deleted");return load()}).catch(function(x){toast(x.message,1)})}
+ else if(act==="pick"){$("#files").click()}
+ else if(act==="cap"){var m=S.media.filter(function(i){return i.key===key})[0],c=prompt("Caption",m.caption||"");if(c!==null)api("PATCH","/media",{key:key,caption:c}).then(load).catch(function(x){toast(x.message,1)})}
+ else if(act==="gal"){var m2=S.media.filter(function(i){return i.key===key})[0];api("PATCH","/media",{key:key,gallery:!m2.gallery}).then(load).catch(function(x){toast(x.message,1)})}
+ else if(act==="rm"){if(confirm("Delete this file for good? Posts using it will lose the picture."))api("DELETE","/media?key="+encodeURIComponent(key)).then(function(){toast("Deleted");return load()}).catch(function(x){toast(x.message,1)})}});
+document.addEventListener("change",function(e){if(e.target.id!=="files")return;var files=[].slice.call(e.target.files),gal=$("#ingal").checked,cap=$("#incap").value,box=$("#up");e.target.value="";
+ var chain=Promise.resolve();files.forEach(function(f){var row=document.createElement("div");row.style.cssText="text-align:left;margin-top:10px;font-size:13px";row.innerHTML="<b>"+esc(f.name)+'</b> <span>waiting…</span><div class="bar"><i></i></div>';box.appendChild(row);
+  chain=chain.then(function(){var sp=row.querySelector("span"),bar=row.querySelector("i");sp.textContent="uploading…";return send(f,gal,cap,function(p){bar.style.width=Math.round(p*100)+"%"}).then(function(){bar.style.width="100%";sp.textContent="done ✓"}).catch(function(x){sp.textContent="failed: "+x.message;sp.style.color="#C20F16"})})});
+ chain.then(function(){return api("GET","/media")}).then(function(m){S.media=m;setTimeout(function(){if(S.tab==="media"&&!S.edit)render()},1200)})});
+load();
+</script></body></html>

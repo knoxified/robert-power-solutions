@@ -207,14 +207,14 @@ function vitePluginStorageProxy(): Plugin {
 // Single source of truth for the public domain. Override at build time with SITE_URL=https://example.com
 const SITE_URL = (process.env.SITE_URL || "https://robert-power.solutions").replace(/\/$/, "");
 function vitePluginSiteMeta(): Plugin {
-  const pages = ["", "repairs", "installations", "case-studies", "about", "contact", "blog", "privacy", "terms"];
+  const pages = ["", "repairs", "installations", "case-studies", "about", "contact", "gallery", "blog", "privacy", "terms"];
   return {
     name: "site-meta",
     transformIndexHtml: html => html.replaceAll("__SITE_URL__", SITE_URL),
     closeBundle() {
       const out = path.resolve(PROJECT_ROOT, "dist/public");
       if (!fs.existsSync(out)) return;
-      fs.writeFileSync(path.join(out, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+      fs.writeFileSync(path.join(out, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
       fs.writeFileSync(path.join(out, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(p => `  <url><loc>${SITE_URL}/${p}</loc></url>`).join("\n")}\n</urlset>\n`);
     },
   };

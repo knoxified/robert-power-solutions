@@ -173,6 +173,9 @@ importers:
       '@builder.io/vite-plugin-jsx-loc':
         specifier: ^0.1.1
         version: 0.1.1(vite@7.1.9(@types/node@24.7.0)(jiti@2.6.1)(lightningcss@1.30.1)(tsx@4.20.6))
+      '@cloudflare/workers-types':
+        specifier: ^5.20261106.1
+        version: 5.20261106.1
       '@tailwindcss/typography':
         specifier: ^0.5.15
         version: 0.5.19(tailwindcss@4.1.14)
@@ -238,7 +241,7 @@ importers:
         version: 2.1.9(@types/node@24.7.0)(lightningcss@1.30.1)
       wrangler:
         specifier: ^4.158.0
-        version: 4.158.0(@types/node@24.7.0)
+        version: 4.158.0(@cloudflare/workers-types@5.20261106.1)(@types/node@24.7.0)
 
 packages:
 
@@ -403,6 +406,9 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
+
+  '@cloudflare/workers-types@5.20261106.1':
+    resolution: {integrity: sha512-uQtZyYehF0hwImaFi0/z/BWeTC/DMKpEo+nCySs5WZwoMhnIqLnN3sVjS7GCBc222EWf+F6khsHPWIvPEaP6JA==}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -4171,6 +4177,8 @@ snapshots:
 
   '@cloudflare/workerd-windows-64@1.20261104.1':
     optional: true
+
+  '@cloudflare/workers-types@5.20261106.1': {}
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -7984,7 +7992,7 @@ snapshots:
       regexparam: 3.0.0
       use-sync-external-store: 1.6.0(react@19.2.1)
 
-  wrangler@4.158.0(@types/node@24.7.0):
+  wrangler@4.158.0(@cloudflare/workers-types@5.20261106.1)(@types/node@24.7.0):
     dependencies:
       '@cloudflare/kv-asset-handler': 0.5.0
       '@cloudflare/unenv-preset': 2.16.2(unenv@2.0.0-rc.24)(workerd@1.20261104.1)
@@ -7996,6 +8004,7 @@ snapshots:
       unenv: 2.0.0-rc.24
       workerd: 1.20261104.1
     optionalDependencies:
+      '@cloudflare/workers-types': 5.20261106.1
       fsevents: 2.3.3
     transitivePeerDependencies:
       - '@types/node'
