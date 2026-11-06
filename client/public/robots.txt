@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://robert-p-s.knoxified.org/sitemap.xml
