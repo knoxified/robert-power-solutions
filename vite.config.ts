@@ -203,7 +203,9 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+// Manus runtime/debug/storage-proxy plugins are dev-only; keep them out of production builds (Cloudflare).
+const isBuild = process.argv.includes("build");
+const plugins = isBuild ? [react(), tailwindcss()] : [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
 
 export default defineConfig({
   plugins,
