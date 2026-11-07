@@ -11,7 +11,7 @@ export const BUSINESS = {
   founderAlternateNames: ["Ndi Robert Emeka", "Ndi Emeka Robert"],
   facebook: "https://www.facebook.com/robert.emeka.2025/",
   x: "https://x.com/RobertSolarspro",
-  linkedin: "", // paste Robert's LinkedIn profile URL ("Ndi Emeka Robert") here; it is added everywhere automatically
+  linkedin: "https://ng.linkedin.com/in/ndi-emeka-robert-58bb98292",
 };
 
 export const SEO_PAGES: Record<string, { title: string; description: string }> = {
