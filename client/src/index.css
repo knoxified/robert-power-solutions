@@ -173,3 +173,13 @@ h2 em,h1 em,.page-intro h1 em{color:var(--teal);font-style:normal}
 .guide-areas{margin-top:50px;padding:28px;background:#F4ECE0;border-radius:var(--radius-lg)}.guide-areas h2{margin:0 0 10px;color:var(--ink);font-size:24px}.guide-areas p{margin:0;color:#5b5045;line-height:1.8}.guide-areas a{color:var(--teal);font-weight:700}
 .symptom-more{margin-top:34px;text-align:center}
 @media(max-width:760px){.guide-grid{grid-template-columns:1fr}.guide-safety{flex-direction:column}}
+
+/* rotating photos on the social cards */
+.rotator{position:absolute;inset:0}.rotator img{position:absolute;inset:0;width:100%;height:100%;min-height:0;object-fit:cover;object-position:center 35%;opacity:0;transition:opacity 1.1s ease}.rotator img.on{opacity:1}
+@media(prefers-reduced-motion:reduce){.rotator img{transition:none}}
+
+/* Fix: the closed WhatsApp chat panel was an invisible box that swallowed taps on the footer icons */
+.wa-widget{pointer-events:none}
+.wa-widget .wa-trigger,.wa-widget-open .wa-panel{pointer-events:auto}
+.wa-widget:not(.wa-widget-open) .wa-panel{pointer-events:none!important;visibility:hidden}
+.footer .socials a{position:relative;z-index:25}
