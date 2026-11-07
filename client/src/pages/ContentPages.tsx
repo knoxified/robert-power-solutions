@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useRoute } from "wouter";
 import { ArrowLeft, ArrowRight, Play, X } from "lucide-react";
 import { renderMarkdown } from "@shared/markdown";
+import { GALLERY_SEED } from "@/lib/gallery-seed";
 import { ContactStrip, LazyImage, PageIntro, Shell } from "./SitePages";
 
 type PostMeta = { slug: string; title: string; excerpt: string; cover: string; publishedAt: string | null };
@@ -83,28 +84,32 @@ export function BlogPost() {
   </Shell>;
 }
 
+type GalleryEntry = { id: string; src: string; type: "image" | "video"; caption: string; alt: string };
+
 export function Gallery() {
   const { data, state } = useJSON<MediaItem[]>("/api/gallery", []);
-  const [open, setOpen] = useState<MediaItem | null>(null);
+  const [open, setOpen] = useState<GalleryEntry | null>(null);
+  // Robert's uploads first, then the photos that ship with the site.
+  const items: GalleryEntry[] = [
+    ...data.map(m => ({ id: m.key, src: `/media/${m.key}`, type: m.type, caption: m.caption, alt: m.caption || "Robert Power Solutions installation" })),
+    ...GALLERY_SEED.map(g => ({ id: g.src, src: g.src, type: "image" as const, caption: g.caption, alt: g.alt })),
+  ];
   useEffect(() => {
     const h = (e: KeyboardEvent) => e.key === "Escape" && setOpen(null);
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
   return <Shell>
-    <PageIntro eyebrow="REAL JOBS · REAL SYSTEMS" title={<>See the work <em>for yourself.</em></>} text="Photos and videos straight from Robert Power Solutions installations and repairs across Nigeria." />
+    <PageIntro eyebrow="REAL JOBS · REAL SYSTEMS" title={<>See the work <em>for yourself.</em></>} text="Photos and videos straight from Robert Power Solutions installations and repairs across Nigeria, including Deye and Cworth Energy systems." />
     <section className="content-section"><div className="container">
-      {state === "loading" && <p className="content-empty">Loading…</p>}
-      {state === "error" && <p className="content-empty">The gallery could not load right now. Please refresh in a moment.</p>}
-      {state === "ok" && data.length === 0 && <div className="content-empty"><strong>New photos and videos are on the way.</strong><p>Follow Robert on Facebook or X for the latest work in the meantime.</p></div>}
-      <div className="gallery-grid">{data.map(m => <button className="gallery-item" key={m.key} onClick={() => setOpen(m)} aria-label={m.caption || "Open"}>
-        {m.type === "video" ? <><video src={`/media/${m.key}#t=0.1`} preload="metadata" muted playsInline /><span className="gallery-play"><Play size={22} fill="currentColor" /></span></> : <LazyImage src={`/media/${m.key}`} alt={m.caption || "Robert Power Solutions installation"} />}
+      <div className="gallery-grid">{items.map(m => <button className="gallery-item" key={m.id} onClick={() => setOpen(m)} aria-label={m.caption || "Open"}>
+        {m.type === "video" ? <><video src={`${m.src}#t=0.1`} preload="metadata" muted playsInline /><span className="gallery-play"><Play size={22} fill="currentColor" /></span></> : <LazyImage src={m.src} alt={m.alt} />}
         {m.caption && <span className="gallery-cap">{m.caption}</span>}
       </button>)}</div>
     </div></section>
     {open && <div className="lightbox" onClick={() => setOpen(null)} role="dialog" aria-modal="true">
       <button className="lightbox-close" aria-label="Close"><X size={22} /></button>
-      <div onClick={e => e.stopPropagation()}>{open.type === "video" ? <video src={`/media/${open.key}`} controls autoPlay playsInline /> : <img src={`/media/${open.key}`} alt={open.caption || ""} />}{open.caption && <p>{open.caption}</p>}</div>
+      <div onClick={e => e.stopPropagation()}>{open.type === "video" ? <video src={open.src} controls autoPlay playsInline /> : <img src={open.src} alt={open.alt} />}{open.caption && <p>{open.caption}</p>}</div>
     </div>}
     <ContactStrip />
   </Shell>;
