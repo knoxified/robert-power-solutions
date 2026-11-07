@@ -207,7 +207,7 @@ function vitePluginStorageProxy(): Plugin {
 // Single source of truth for the public domain. Override at build time with SITE_URL=https://example.com
 const SITE_URL = (process.env.SITE_URL || "https://robert-power.solutions").replace(/\/$/, "");
 function vitePluginSiteMeta(): Plugin {
-  const pages = ["", "repairs", "installations", "case-studies", "about", "contact", "gallery", "blog", "privacy", "terms"];
+  const pages = ["", "repairs", "installations", "case-studies", "about", "contact", "gallery", "blog", "solar-troubleshooting", "privacy", "terms"];
   return {
     name: "site-meta",
     transformIndexHtml: html => html.replaceAll("__SITE_URL__", SITE_URL),

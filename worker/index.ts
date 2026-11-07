@@ -7,6 +7,7 @@
  */
 import adminHtml from "./admin.html";
 import loginHtml from "./login.html";
+import { SEO_PAGES, buildSchema, schemaScript } from "../shared/seo";
 
 export interface Env {
   ASSETS: Fetcher;
@@ -221,7 +222,7 @@ async function serveMedia(req: Request, env: Env, key: string): Promise<Response
   return new Response(req.method === "HEAD" ? null : value, { headers: h });
 }
 
-const STATIC_PAGES = ["", "repairs", "installations", "case-studies", "about", "contact", "gallery", "blog", "privacy", "terms"];
+const STATIC_PAGES = Object.keys(SEO_PAGES).map(p => p.replace(/^\//, ""));
 async function sitemap(env: Env, origin: string): Promise<Response> {
   const posts = (await readJSON<PostMeta[]>(env, "index/posts.json", [])).filter(p => p.status === "published");
   const rows = STATIC_PAGES.map(p => `  <url><loc>${origin}/${p}</loc></url>`).concat(posts.map(p => `  <url><loc>${origin}/blog/${p.slug}</loc><lastmod>${p.updatedAt.slice(0, 10)}</lastmod></url>`));
@@ -247,6 +248,26 @@ async function blogPage(req: Request, env: Env, url: URL, slug: string): Promise
     .on('meta[property="og:image"]', set("content", img))
     .on('meta[name="twitter:image"]', set("content", img))
     .on('link[rel="canonical"]', set("href", `${url.origin}/blog/${slug}`))
+    .on("head", { element(e) { e.append(`<script id="post-schema" type="application/ld+json">${schemaScript({ "@context": "https://schema.org", "@type": "BlogPosting", headline: p.title, description: desc, datePublished: p.publishedAt, dateModified: p.updatedAt, image: img, author: { "@type": "Person", name: "Robert Emeka" }, publisher: { "@type": "Organization", name: "Robert Power Solutions", logo: { "@type": "ImageObject", url: url.origin + "/images/logo.png" } }, mainEntityOfPage: `${url.origin}/blog/${slug}` })}</script>`, { html: true }); } })
+    .transform(shell);
+}
+
+// Marketing pages are client-rendered React; inject each page's own title/description/share tags and
+// structured data into the HTML so search engines and link previews get them without running JavaScript.
+async function pageShell(req: Request, env: Env, url: URL, path: string): Promise<Response> {
+  const shell = await env.ASSETS.fetch(new Request(new URL("/", url).toString(), req));
+  const m = SEO_PAGES[path];
+  if (!m) return shell;
+  const set = (attr: string, value: string) => ({ element(e: Element) { e.setAttribute(attr, value); } });
+  const canonical = url.origin + (path === "/" ? "/" : path);
+  return new HTMLRewriter()
+    .on("title", { element(e) { e.setInnerContent(m.title); } })
+    .on('meta[name="description"]', set("content", m.description))
+    .on('meta[property="og:title"]', set("content", m.title))
+    .on('meta[property="og:description"]', set("content", m.description))
+    .on('meta[property="og:url"]', set("content", canonical))
+    .on('link[rel="canonical"]', set("href", canonical))
+    .on("head", { element(e) { e.append(`<script id="robert-power-schema" type="application/ld+json">${schemaScript(buildSchema(url.origin, path))}</script>`, { html: true }); } })
     .transform(shell);
 }
 
@@ -274,6 +295,17 @@ export default {
     } catch (err) {
       console.error(err);
       return json({ error: "Something went wrong. Please try again." }, 500);
+    }
+    if (req.method === "GET" || req.method === "HEAD") {
+      const norm = p.length > 1 ? p.replace(/\/+$/, "") : p;
+      if (SEO_PAGES[norm]) return pageShell(req, env, url, norm);
+    }
+    // Anything that is not a file and not a known page is a real 404 (SPA shell still renders the friendly page).
+    if ((req.method === "GET" || req.method === "HEAD") && !/\.[a-z0-9]+$/i.test(p)) {
+      const r = await env.ASSETS.fetch(new Request(new URL("/", url).toString(), req));
+      const h = new Headers(r.headers);
+      h.set("x-robots-tag", "noindex");
+      return new Response(r.body, { status: 404, headers: h });
     }
     return env.ASSETS.fetch(req);
   },
