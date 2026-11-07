@@ -114,3 +114,6 @@ client/public/__manus__/version.json
 
 # Cloudflare local state
 .wrangler/
+
+# Local secrets
+.dev.vars

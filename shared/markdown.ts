@@ -2,7 +2,7 @@
  * Minimal, XSS-safe Markdown → HTML for blog posts written in the admin.
  * All text is HTML-escaped FIRST, then formatting is applied, and URLs are restricted
  * to https/http, /media/ (our own uploads), mailto and tel. Raw HTML in a post is shown as text.
- * Supported: # ## ### headings, **bold**, *italic*, [links](url), ![image](url), ![video](url),
+ * Supported: # ## ### headings, **bold**, *italic*, [links](url), ![image](url), ![video](url), ![youtube](VIDEO_ID),
  * - lists, 1. lists, > quotes, --- rules, paragraphs.
  */
 export function renderMarkdown(src: string): string {
@@ -10,6 +10,7 @@ export function renderMarkdown(src: string): string {
   const url = (u: string) => (/^(https?:\/\/|\/media\/|mailto:|tel:)/i.test(u) ? u : "#");
   const inline = (t: string) =>
     esc(t)
+      .replace(/!\[youtube\]\(([A-Za-z0-9_-]{11})\)/g, (_m, id) => `<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${id}" title="YouTube video" loading="lazy" allow="accelerometer; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`)
       .replace(/!\[video\]\(([^)\s]+)\)/g, (_m, a) => `<video controls preload="metadata" playsinline src="${url(a)}"></video>`)
       .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, a, b) => `<img alt="${a}" src="${url(b)}" loading="lazy">`)
       .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, a, b) => `<a href="${url(b)}" target="_blank" rel="noopener noreferrer">${a}</a>`)

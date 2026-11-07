@@ -1,23 +1,23 @@
 /**
  * Robert Power Solutions — Cloudflare Worker
  *  - serves the static React site (ASSETS)
- *  - public read-only API for blog posts + gallery, and streams media from R2
+ *  - public read-only API for blog posts + gallery, and serves uploaded media from Workers KV (free plan)
  *  - a hidden, password-protected admin (ADMIN path) for uploads and blog writing
- * Secrets (never in git): ADMIN_PASSWORD, SESSION_SECRET.  Bucket binding: MEDIA.
+ * Secrets (never in git): ADMIN_PASSWORD, SESSION_SECRET.   KV binding: MEDIA.
  */
 import adminHtml from "./admin.html";
 import loginHtml from "./login.html";
 
 export interface Env {
   ASSETS: Fetcher;
-  MEDIA: R2Bucket;
+  MEDIA: KVNamespace; // all content lives here: posts, media index, uploaded files, login throttle
   ADMIN_PASSWORD: string;
   SESSION_SECRET: string;
 }
 
 // Unlisted admin address. Change it here AND in wrangler.jsonc (run_worker_first) to move it.
 const ADMIN = "/robert-studio-9k4x";
-const MAX_UPLOAD = 95 * 1024 * 1024; // Workers request-body limit is 100 MB
+const MAX_UPLOAD = 24 * 1024 * 1024; // KV value limit is 25 MiB
 const SESSION_SECONDS = 7 * 24 * 3600;
 const COOKIE = "rps_session";
 const te = new TextEncoder();
@@ -36,12 +36,11 @@ const UPLOAD_TYPES: Record<string, { ext: string; kind: "image" | "video" }> = {
 const json = (data: unknown, status = 200, extra: Record<string, string> = {}) =>
   new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex", ...extra } });
 
+/* ---------- storage layer (Workers KV). Swap these few functions to move to R2 / another host. ---------- */
 async function readJSON<T>(env: Env, key: string, fallback: T): Promise<T> {
-  const o = await env.MEDIA.get(key);
-  if (!o) return fallback;
-  try { return (await o.json()) as T; } catch { return fallback; }
+  return ((await env.MEDIA.get(key, "json")) as T | null) ?? fallback;
 }
-const writeJSON = (env: Env, key: string, v: unknown) => env.MEDIA.put(key, JSON.stringify(v), { httpMetadata: { contentType: "application/json" } });
+const writeJSON = (env: Env, key: string, v: unknown, ttl?: number) => env.MEDIA.put(key, JSON.stringify(v), ttl ? { expirationTtl: ttl } : undefined);
 
 const b64u = (u: Uint8Array) => btoa(String.fromCharCode(...u)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 async function sha256(s: string) { return new Uint8Array(await crypto.subtle.digest("SHA-256", te.encode(s))); }
@@ -65,7 +64,7 @@ async function isAuthed(req: Request, env: Env): Promise<boolean> {
 const sameOrigin = (req: Request, url: URL) => { const o = req.headers.get("origin"); return (!o || o === url.origin) && req.headers.get("x-rps") === "1"; };
 
 /* ---------- admin ---------- */
-const ADMIN_CSP = "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'";
+const ADMIN_CSP = "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self'; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; base-uri 'none'";
 const adminPage = (html: string) => new Response(html.replaceAll("__ADMIN__", ADMIN), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow", "content-security-policy": ADMIN_CSP, "x-frame-options": "DENY" } });
 
 async function admin(req: Request, env: Env, url: URL): Promise<Response> {
@@ -86,7 +85,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     if (!ok) {
       state.count++;
       if (state.count >= 5) { state.until = Date.now() + 15 * 60_000; state.count = 0; }
-      await writeJSON(env, key, state);
+      await writeJSON(env, key, state, 3600);
       await new Promise(r => setTimeout(r, 600));
       return json({ error: "That password is not correct." }, 401);
     }
@@ -106,7 +105,7 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
   const pm = sub.match(/^\/api\/posts\/([a-z0-9-]+)$/);
   if (pm) {
     const slug = pm[1];
-    if (req.method === "GET") { const p = await env.MEDIA.get(`posts/${slug}.json`); return p ? new Response(p.body, { headers: { "content-type": "application/json", "cache-control": "no-store" } }) : json({ error: "Not found" }, 404); }
+    if (req.method === "GET") { const p = await readJSON<Post | null>(env, `posts/${slug}.json`, null); return p ? json(p) : json({ error: "Not found" }, 404); }
     if (req.method === "DELETE") {
       await env.MEDIA.delete(`posts/${slug}.json`);
       await writeJSON(env, "index/posts.json", (await readJSON<PostMeta[]>(env, "index/posts.json", [])).filter(p => p.slug !== slug));
@@ -141,14 +140,17 @@ async function admin(req: Request, env: Env, url: URL): Promise<Response> {
     const ct = (req.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
     const t = UPLOAD_TYPES[ct];
     if (!t) return json({ error: "That file type is not supported. Use JPG, PNG, WebP, MP4, MOV or WebM." }, 415);
-    const len = Number(req.headers.get("content-length") || 0);
-    if (!len || !req.body) return json({ error: "Empty file." }, 400);
-    if (len > MAX_UPLOAD) return json({ error: "That file is over 95 MB. Please trim or compress it first." }, 413);
+    const declared = Number(req.headers.get("content-length") || 0);
+    if (declared > MAX_UPLOAD) return json({ error: "That file is over 24 MB. Please trim or compress it first, or add it to a post as a YouTube link." }, 413);
+    const buf = await req.arrayBuffer();
+    if (!buf.byteLength) return json({ error: "Empty file." }, 400);
+    if (buf.byteLength > MAX_UPLOAD) return json({ error: "That file is over 24 MB. Please trim or compress it first, or add it to a post as a YouTube link." }, 413);
+    const len = buf.byteLength;
     const name = (url.searchParams.get("name") || "file").slice(0, 120);
     const base = slugify(name.replace(/\.[^.]+$/, "")) || "file";
     const d = new Date();
     const key = `uploads/${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}/${crypto.randomUUID().slice(0, 8)}-${base}.${t.ext}`;
-    await env.MEDIA.put(key, req.body, { httpMetadata: { contentType: ct } });
+    await env.MEDIA.put(key, buf, { metadata: { ct } });
     const item: MediaItem = { key, name, type: t.kind, size: len, caption: (url.searchParams.get("caption") || "").slice(0, 200), gallery: url.searchParams.get("gallery") !== "0", createdAt: d.toISOString() };
     const idx = await readJSON<MediaItem[]>(env, "index/media.json", []);
     idx.unshift(item);
@@ -198,23 +200,25 @@ async function publicApi(env: Env, path: string): Promise<Response | null> {
 
 async function serveMedia(req: Request, env: Env, key: string): Promise<Response> {
   if (!key.startsWith("uploads/") || key.includes("..")) return new Response("Not found", { status: 404 });
-  const range = req.headers.get("range");
-  const obj = await env.MEDIA.get(key, range ? { range: req.headers } : undefined);
-  if (!obj) return new Response("Not found", { status: 404 });
-  const h = new Headers();
-  obj.writeHttpMetadata(h);
-  h.set("etag", obj.httpEtag);
-  h.set("accept-ranges", "bytes");
-  h.set("cache-control", "public, max-age=31536000, immutable");
-  h.set("x-content-type-options", "nosniff");
-  let status = 200;
-  const r = (obj as R2ObjectBody & { range?: { offset?: number; length?: number } }).range;
-  if (range && r && r.offset !== undefined && r.length !== undefined) {
-    status = 206;
-    h.set("content-range", `bytes ${r.offset}-${r.offset + r.length - 1}/${obj.size}`);
-    h.set("content-length", String(r.length));
-  } else h.set("content-length", String(obj.size));
-  return new Response(req.method === "HEAD" ? null : (obj as R2ObjectBody).body, { status, headers: h });
+  const { value, metadata } = await env.MEDIA.getWithMetadata<{ ct?: string }>(key, "arrayBuffer");
+  if (!value) return new Response("Not found", { status: 404 });
+  const total = value.byteLength;
+  const h = new Headers({
+    "content-type": metadata?.ct || "application/octet-stream", "accept-ranges": "bytes",
+    "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff",
+  });
+  // Range support is required for video seeking (and for Safari to play video at all).
+  const rm = (req.headers.get("range") || "").match(/^bytes=(\d*)-(\d*)$/);
+  if (rm && (rm[1] || rm[2])) {
+    const start = rm[1] === "" ? Math.max(0, total - Number(rm[2])) : Number(rm[1]);
+    const end = rm[1] === "" || rm[2] === "" ? total - 1 : Math.min(Number(rm[2]), total - 1);
+    if (start > end || start >= total) return new Response(null, { status: 416, headers: { "content-range": `bytes */${total}` } });
+    h.set("content-range", `bytes ${start}-${end}/${total}`);
+    h.set("content-length", String(end - start + 1));
+    return new Response(req.method === "HEAD" ? null : value.slice(start, end + 1), { status: 206, headers: h });
+  }
+  h.set("content-length", String(total));
+  return new Response(req.method === "HEAD" ? null : value, { headers: h });
 }
 
 const STATIC_PAGES = ["", "repairs", "installations", "case-studies", "about", "contact", "gallery", "blog", "privacy", "terms"];
@@ -247,17 +251,25 @@ async function blogPage(req: Request, env: Env, url: URL, slug: string): Promise
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url);
     const p = url.pathname;
     try {
       if (p === ADMIN || p.startsWith(ADMIN + "/")) return await admin(req, env, url);
       if (req.method === "GET" || req.method === "HEAD") {
-        if (p.startsWith("/api/")) return (await publicApi(env, p)) || json({ error: "Not found" }, 404);
-        if (p.startsWith("/media/")) return await serveMedia(req, env, decodeURIComponent(p.slice(7)));
-        if (p === "/sitemap.xml") return await sitemap(env, url.origin);
-        const bm = p.match(/^\/blog\/([a-z0-9-]+)\/?$/);
-        if (bm) return await blogPage(req, env, url, bm[1]);
+        // Edge-cache public reads so KV's free daily read allowance is barely touched.
+        const cacheable = (p.startsWith("/media/") && !req.headers.get("range")) || p.startsWith("/api/") || p === "/sitemap.xml";
+        const cache = caches.default;
+        if (cacheable && req.method === "GET") { const hit = await cache.match(req); if (hit) return hit; }
+        let res: Response | null = null;
+        if (p.startsWith("/api/")) res = (await publicApi(env, p)) || json({ error: "Not found" }, 404);
+        else if (p.startsWith("/media/")) res = await serveMedia(req, env, decodeURIComponent(p.slice(7)));
+        else if (p === "/sitemap.xml") res = await sitemap(env, url.origin);
+        else { const bm = p.match(/^\/blog\/([a-z0-9-]+)\/?$/); if (bm) return await blogPage(req, env, url, bm[1]); }
+        if (res) {
+          if (cacheable && req.method === "GET" && res.status === 200) ctx.waitUntil(cache.put(req, res.clone()));
+          return res;
+        }
       }
     } catch (err) {
       console.error(err);

@@ -1,0 +1,3 @@
+# Copy to .dev.vars for LOCAL testing only (.dev.vars is git-ignored). Real values are set as Cloudflare secrets.
+ADMIN_PASSWORD=choose-a-long-password
+SESSION_SECRET=any-long-random-string
